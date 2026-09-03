@@ -49,8 +49,8 @@ export default function SponsorsCarousel() {
   const next = () => { setCurrent(c => (c + 1) % slideCount); resetTimer(); };
 
   return (
-    <section className="py-20 md:py-24 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-20 md:py-24 bg-white overflow-hidden">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <span className="inline-block text-xs font-bold uppercase tracking-widest text-brand-gold mb-3">Our Sponsors</span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-brand-navy tracking-tight">
@@ -63,7 +63,7 @@ export default function SponsorsCarousel() {
           </p>
         </div>
 
-        <div className="relative max-w-3xl mx-auto">
+        <div className="relative w-full">
           {/* Track */}
           <div className="overflow-hidden rounded-2xl">
             <div
@@ -73,20 +73,20 @@ export default function SponsorsCarousel() {
               {sponsors.length > 0 ? (
                 sponsors.map((s) => (
                   <div key={s.id} className="min-w-full px-2">
-                    <div className="flex flex-col items-center justify-center gap-6 py-20 px-8">
+                    <div className="flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-2xl py-20 px-8 group hover:border-brand-gold transition-colors duration-300">
                       {s.logo_path ? (
                         <img
                           src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/sponsor-logos/${s.logo_path}`}
                           alt={s.name}
-                          className="max-h-28 max-w-xs object-contain"
+                          className="max-h-32 max-w-md object-contain"
                         />
                       ) : (
-                        <div className="w-20 h-20 rounded-full bg-brand-navy/5 border-2 border-dashed border-brand-navy/20 flex items-center justify-center">
-                          <Building2 className="text-brand-navy/30" size={32} />
+                        <div className="w-24 h-24 rounded-full bg-brand-navy/5 border-2 border-dashed border-brand-navy/20 flex items-center justify-center">
+                          <Building2 className="text-brand-navy/30" size={36} />
                         </div>
                       )}
                       <div className="text-center">
-                        <p className="text-2xl font-extrabold text-brand-navy tracking-tight">{s.name}</p>
+                        <p className="text-2xl md:text-3xl font-extrabold text-brand-navy tracking-tight">{s.name}</p>
                         {s.website && (
                           <a
                             href={s.website}
@@ -105,14 +105,14 @@ export default function SponsorsCarousel() {
                 Array.from({ length: PLACEHOLDER_COUNT }).map((_, i) => (
                   <div key={i} className="min-w-full px-2">
                     <div className="relative flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-2xl py-20 px-8 group hover:border-brand-gold transition-colors duration-300">
-                      <div className="w-20 h-20 rounded-full bg-brand-navy/5 border-2 border-dashed border-brand-navy/20 flex items-center justify-center">
-                        <Building2 className="text-brand-navy/30" size={32} />
+                      <div className="w-24 h-24 rounded-full bg-brand-navy/5 border-2 border-dashed border-brand-navy/20 flex items-center justify-center">
+                        <Building2 className="text-brand-navy/30" size={36} />
                       </div>
                       <div className="text-center">
-                        <p className="text-2xl font-extrabold text-brand-navy/20 tracking-tight">
+                        <p className="text-2xl md:text-3xl font-extrabold text-brand-navy/20 tracking-tight">
                           You Can Be Here
                         </p>
-                        <p className="text-sm text-gray-400 mt-2">
+                        <p className="text-sm text-gray-400 mt-2 max-w-md mx-auto">
                           Sponsor Talon Tech and showcase your brand to the robotics community.
                         </p>
                       </div>
@@ -132,17 +132,17 @@ export default function SponsorsCarousel() {
           {/* Controls */}
           <button
             onClick={prev}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center text-brand-navy hover:bg-brand-gold hover:text-white hover:border-brand-gold transition-all duration-200"
+            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center text-brand-navy hover:bg-brand-gold hover:text-white hover:border-brand-gold transition-all duration-200 z-10"
             aria-label="Previous"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={20} />
           </button>
           <button
             onClick={next}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 w-10 h-10 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center text-brand-navy hover:bg-brand-gold hover:text-white hover:border-brand-gold transition-all duration-200"
+            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white border border-gray-200 rounded-full shadow-md flex items-center justify-center text-brand-navy hover:bg-brand-gold hover:text-white hover:border-brand-gold transition-all duration-200 z-10"
             aria-label="Next"
           >
-            <ChevronRight size={18} />
+            <ChevronRight size={20} />
           </button>
         </div>
 
