@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Building2, ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 type Sponsor = {
@@ -65,15 +65,15 @@ export default function SponsorsCarousel() {
 
         <div className="relative w-full">
           {/* Track */}
-          <div className="overflow-hidden rounded-2xl">
+          <div className="overflow-hidden">
             <div
               className="flex transition-transform duration-500 ease-in-out"
               style={{ transform: `translateX(-${current * 100}%)` }}
             >
               {sponsors.length > 0 ? (
-                sponsors.map((s) => (
-                  <div key={s.id} className="min-w-full px-2">
-                    <div className="flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-2xl py-20 px-8 group hover:border-brand-gold transition-colors duration-300">
+                sponsors.map((s) => {
+                  const slide = (
+                    <div className="flex flex-col items-center justify-center gap-4 py-16 px-8">
                       {s.logo_path ? (
                         <img
                           src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/sponsor-logos/${s.logo_path}`}
@@ -81,41 +81,37 @@ export default function SponsorsCarousel() {
                           className="max-h-32 max-w-md object-contain"
                         />
                       ) : (
-                        <div className="w-24 h-24 rounded-full bg-brand-navy/5 border-2 border-dashed border-brand-navy/20 flex items-center justify-center">
-                          <Building2 className="text-brand-navy/30" size={36} />
-                        </div>
+                        <p className="text-3xl md:text-4xl font-extrabold text-brand-navy tracking-tight">{s.name}</p>
                       )}
-                      <div className="text-center">
-                        <p className="text-2xl md:text-3xl font-extrabold text-brand-navy tracking-tight">{s.name}</p>
-                        {s.website && (
-                          <a
-                            href={s.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-brand-gold mt-2 transition-colors"
-                          >
-                            Visit website <ExternalLink size={12} />
-                          </a>
-                        )}
-                      </div>
+                      {s.website && (
+                        <span className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-brand-gold transition-colors">
+                          {s.name} <ExternalLink size={12} />
+                        </span>
+                      )}
                     </div>
-                  </div>
-                ))
+                  );
+                  return (
+                    <div key={s.id} className="min-w-full px-2">
+                      {s.website ? (
+                        <a href={s.website} target="_blank" rel="noopener noreferrer" className="block">
+                          {slide}
+                        </a>
+                      ) : (
+                        slide
+                      )}
+                    </div>
+                  );
+                })
               ) : (
                 Array.from({ length: PLACEHOLDER_COUNT }).map((_, i) => (
                   <div key={i} className="min-w-full px-2">
-                    <div className="relative flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-dashed border-gray-300 rounded-2xl py-20 px-8 group hover:border-brand-gold transition-colors duration-300">
-                      <div className="w-24 h-24 rounded-full bg-brand-navy/5 border-2 border-dashed border-brand-navy/20 flex items-center justify-center">
-                        <Building2 className="text-brand-navy/30" size={36} />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl md:text-3xl font-extrabold text-brand-navy/20 tracking-tight">
-                          You Can Be Here
-                        </p>
-                        <p className="text-sm text-gray-400 mt-2 max-w-md mx-auto">
-                          Sponsor Talon Tech and showcase your brand to the robotics community.
-                        </p>
-                      </div>
+                    <div className="flex flex-col items-center justify-center gap-4 py-16 px-8">
+                      <p className="text-2xl md:text-3xl font-extrabold text-brand-navy/20 tracking-tight">
+                        You Can Be Here
+                      </p>
+                      <p className="text-sm text-gray-400 max-w-md text-center">
+                        Sponsor Talon Tech and showcase your brand to the robotics community.
+                      </p>
                       <Link
                         to="/sponsor"
                         className="mt-2 inline-flex items-center gap-2 bg-brand-navy text-white text-sm font-semibold px-6 py-2.5 rounded-full hover:bg-brand-navy-light transition-colors duration-200"

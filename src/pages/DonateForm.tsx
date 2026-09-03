@@ -82,7 +82,7 @@ export default function DonateForm() {
             <Heart className="text-brand-gold" size={28} />
             <h1 className="text-3xl md:text-4xl font-extrabold text-brand-navy tracking-tight">Support Talon Tech</h1>
           </div>
-          <p className="text-gray-600 mt-2">Your donation directly supports robot parts, competition fees, and travel costs.</p>
+          <p className="text-gray-600 mt-2">Your donation directly supports robot parts, competition fees, and travel costs. After submitting, our team will reach out to coordinate your contribution.</p>
         </div>
 
         {error && (

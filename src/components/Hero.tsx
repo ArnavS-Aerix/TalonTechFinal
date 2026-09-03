@@ -1,25 +1,52 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Target, TrendingUp, Cpu, Trophy, Users, ChevronDown } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 const HOURS = 50;
+
+type SiteSettings = {
+  hero_bg_type: string;
+  hero_bg_color: string;
+  hero_bg_image_path: string | null;
+};
 
 export default function Hero() {
   const hours = HOURS;
   const [progress, setProgress] = useState(0);
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
   const goal = 10000;
   const raised = 2700;
   const percentage = Math.round((raised / goal) * 100);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('site_settings')
+        .select('hero_bg_type, hero_bg_color, hero_bg_image_path')
+        .eq('id', 1)
+        .maybeSingle();
+      if (data) setSettings(data as SiteSettings);
+    })();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setProgress(percentage), 500);
     return () => clearTimeout(timer);
   }, [percentage]);
 
+  const bgStyle: React.CSSProperties = settings?.hero_bg_type === 'image' && settings.hero_bg_image_path
+    ? {
+        backgroundImage: `linear-gradient(rgba(10,22,40,0.7), rgba(10,22,40,0.85)), url(${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/hero-images/${settings.hero_bg_image_path})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    : { backgroundColor: settings?.hero_bg_color ?? '#0a1628' };
+
   return (
-    <section className="relative min-h-screen bg-brand-navy flex flex-col overflow-hidden pt-20">
+    <section className="relative min-h-screen flex flex-col overflow-hidden pt-20" style={bgStyle}>
       {/* Background grid */}
-      <div className="absolute inset-0 opacity-5">
+      <div className="absolute inset-0 opacity-5 pointer-events-none">
         <div className="absolute inset-0" style={{
           backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
           backgroundSize: '180px 180px',
