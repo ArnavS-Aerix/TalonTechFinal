@@ -7,7 +7,7 @@ import SponsorshipTiers from './components/SponsorshipTiers';
 import SponsorsCarousel from './components/SponsorsCarousel';
 import Credibility from './components/Credibility';
 import Team from './components/Team';
-import By from './components/By';
+import SponsorLogos from './components/SponsorLogos';
 import PhotosCarousel from './components/PhotosCarousel';
 import Newsletter from './components/Newsletter';
 import SupportCall from './components/SupportCall';
@@ -39,7 +39,7 @@ export default function App() {
             <SponsorsCarousel />
             <Credibility />
             <Team />
-            <By />
+            <SponsorLogos />
             <PhotosCarousel />
             <Newsletter />
             <SupportCall />
