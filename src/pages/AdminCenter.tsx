@@ -4,7 +4,7 @@ import {
   Building2, Upload, Trash2, Plus, Loader2, Image as ImageIcon, Palette,
   Handshake, Heart, Clock, User, Mail, Phone, Globe, ExternalLink, Save,
   Camera, ArrowLeft, Lock, KeyRound, Mail as MailIcon, Send, Sparkles,
-  FileText, Calendar, ToggleLeft, ToggleRight, Eye, EyeOff,
+  FileText, Calendar, ToggleLeft, ToggleRight, Eye, EyeOff, TrendingUp, Target,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -38,7 +38,7 @@ type NewsletterSchedule = {
   auto_send: boolean; day_of_week: number; send_time: string; last_sent_at: string | null;
 };
 
-type Tab = 'sponsors' | 'hero' | 'newsletter' | 'content' | 'settings' | 'sponsorships' | 'donations';
+type Tab = 'sponsors' | 'hero' | 'fundraising' | 'newsletter' | 'content' | 'settings' | 'sponsorships' | 'donations';
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -122,7 +122,12 @@ function AdminDashboard() {
   const [savingSponsor, setSavingSponsor] = useState(false);
 
   // Hero settings
-  const [heroSettings, setHeroSettings] = useState<SiteSettings>({ hero_bg_type: 'color', hero_bg_color: '#0a1628', hero_bg_image_path: null });
+  const [heroSettings, setHeroSettings] = useState<SiteSettings>({ hero_bg_type: 'color', hero_bg_color: '#0a1628', hero_bg_image_path: null, funds_raised: 0, fundraising_goal: 10000 });
+
+  // Fundraising
+  const [fundForm, setFundForm] = useState({ funds_raised: '0', fundraising_goal: '10000' });
+  const [loadingFund, setLoadingFund] = useState(true);
+  const [savingFund, setSavingFund] = useState(false);
   const [loadingHero, setLoadingHero] = useState(true);
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
   const [savingHero, setSavingHero] = useState(false);
@@ -167,8 +172,11 @@ function AdminDashboard() {
 
   const loadHeroSettings = useCallback(async () => {
     setLoadingHero(true);
-    const { data } = await supabase.from('site_settings').select('hero_bg_type, hero_bg_color, hero_bg_image_path').eq('id', 1).maybeSingle();
-    if (data) setHeroSettings(data as SiteSettings);
+    const { data } = await supabase.from('site_settings').select('hero_bg_type, hero_bg_color, hero_bg_image_path, funds_raised, fundraising_goal').eq('id', 1).maybeSingle();
+    if (data) {
+      setHeroSettings(data as SiteSettings);
+      setFundForm({ funds_raised: String((data as SiteSettings).funds_raised ?? 0), fundraising_goal: String((data as SiteSettings).fundraising_goal ?? 10000) });
+    }
     setLoadingHero(false);
   }, []);
 
@@ -211,9 +219,12 @@ function AdminDashboard() {
 
   useEffect(() => { loadSponsors(); loadHeroSettings(); }, [loadSponsors, loadHeroSettings]);
 
+  // loadHeroSettings also loads fundraising values into fundForm
+
   const tabs: { id: Tab; label: string; icon: typeof Building2 }[] = [
     { id: 'sponsors', label: 'Sponsors', icon: Building2 },
     { id: 'hero', label: 'Hero Background', icon: Palette },
+    { id: 'fundraising', label: 'Fundraising', icon: TrendingUp },
     { id: 'newsletter', label: 'Newsletter', icon: MailIcon },
     { id: 'content', label: 'Content', icon: FileText },
     { id: 'settings', label: 'API Keys', icon: KeyRound },
@@ -227,6 +238,19 @@ function AdminDashboard() {
     if (tab === 'content') loadContent();
     if (tab === 'sponsorships') loadSponsorships();
     if (tab === 'donations') loadDonations();
+  };
+
+  // ── Fundraising handlers ──
+  const handleSaveFundraising = async () => {
+    setSavingFund(true);
+    const raised = Number(fundForm.funds_raised) || 0;
+    const goal = Number(fundForm.fundraising_goal) || 10000;
+    const { error } = await supabase.from('site_settings').update({
+      funds_raised: raised, fundraising_goal: goal, updated_at: new Date().toISOString(),
+    }).eq('id', 1);
+    setSavingFund(false);
+    if (error) { alert('Failed: ' + error.message); return; }
+    alert('Fundraising updated!');
   };
 
   // ── Sponsor handlers ──
@@ -540,6 +564,48 @@ function AdminDashboard() {
                 </button>
               </>
             )}
+          </div>
+        )}
+
+        {/* ── Fundraising ── */}
+        {activeTab === 'fundraising' && (
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 md:p-8 space-y-6">
+            <h2 className="text-xl font-bold text-brand-navy flex items-center gap-2"><TrendingUp size={18} className="text-brand-gold" /> Fundraising Tracker</h2>
+            <p className="text-gray-500 text-sm">Update the amounts shown on the homepage fundraising progress bar.</p>
+            <div className="grid sm:grid-cols-2 gap-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-2"><TrendingUp size={14} className="text-brand-gold" /> Funds Raised ($)</label>
+                <input type="number" min="0" step="any" value={fundForm.funds_raised}
+                  onChange={(e) => setFundForm({ ...fundForm, funds_raised: e.target.value })}
+                  placeholder="0"
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none transition-all text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5 flex items-center gap-2"><Target size={14} className="text-brand-gold" /> Fundraising Goal ($)</label>
+                <input type="number" min="0" step="any" value={fundForm.fundraising_goal}
+                  onChange={(e) => setFundForm({ ...fundForm, fundraising_goal: e.target.value })}
+                  placeholder="10000"
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none transition-all text-sm" />
+              </div>
+            </div>
+            {Number(fundForm.fundraising_goal) > 0 && (
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-gray-600">Preview</span>
+                  <span className="text-sm font-bold text-brand-navy">
+                    {Math.round((Number(fundForm.funds_raised || 0) / Number(fundForm.fundraising_goal || 1)) * 100)}% of goal
+                  </span>
+                </div>
+                <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-brand-gold to-brand-orange rounded-full transition-all"
+                    style={{ width: `${Math.min(100, Math.round((Number(fundForm.funds_raised || 0) / Number(fundForm.fundraising_goal || 1)) * 100))}%` }} />
+                </div>
+                <p className="text-xs text-gray-400 mt-2">${Number(fundForm.funds_raised || 0).toLocaleString()} of ${Number(fundForm.fundraising_goal || 0).toLocaleString()}</p>
+              </div>
+            )}
+            <button onClick={handleSaveFundraising} disabled={savingFund} className="btn-primary text-sm disabled:opacity-60">
+              {savingFund ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : <><Save size={16} /> Save</>}
+            </button>
           </div>
         )}
 

@@ -9,21 +9,23 @@ type SiteSettings = {
   hero_bg_type: string;
   hero_bg_color: string;
   hero_bg_image_path: string | null;
+  funds_raised: number;
+  fundraising_goal: number;
 };
 
 export default function Hero() {
   const hours = HOURS;
   const [progress, setProgress] = useState(0);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
-  const goal = 10000;
-  const raised = 2700;
-  const percentage = Math.round((raised / goal) * 100);
+  const goal = settings?.fundraising_goal ?? 10000;
+  const raised = settings?.funds_raised ?? 0;
+  const percentage = goal > 0 ? Math.round((raised / goal) * 100) : 0;
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from('site_settings')
-        .select('hero_bg_type, hero_bg_color, hero_bg_image_path')
+        .select('hero_bg_type, hero_bg_color, hero_bg_image_path, funds_raised, fundraising_goal')
         .eq('id', 1)
         .maybeSingle();
       if (data) setSettings(data as SiteSettings);
