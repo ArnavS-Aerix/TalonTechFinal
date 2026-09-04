@@ -34,12 +34,12 @@ export default function App() {
         <Route path="/" element={
           <>
             <Hero />
+            <SponsorLogos />
             <About />
             <SponsorshipTiers />
             <SponsorsCarousel />
             <Credibility />
             <Team />
-            <SponsorLogos />
             <PhotosCarousel />
             <Newsletter />
             <SupportCall />
