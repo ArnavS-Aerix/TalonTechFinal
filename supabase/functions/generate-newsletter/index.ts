@@ -6,7 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const DEFAULT_SITE_URL = "https://talontech.bolt.host";
+const DEFAULT_SITE_URL = "https://talontechrobotics.com";
 const SEND_FUNCTION_URL = `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-newsletter`;
 
 type Secret = { name: string; value: string };
@@ -98,7 +98,7 @@ function buildPrompt(
 async function callLLM(apiKey: string, prompt: string): Promise<{ ok: boolean; html?: string; error?: string }> {
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
