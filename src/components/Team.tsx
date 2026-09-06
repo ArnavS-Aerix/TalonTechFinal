@@ -10,7 +10,7 @@ export default function Team() {
     { name: 'David Cuellar', role: 'Lead Driver' },
     { name: 'Sugaraj Fernando', role: 'Assistant Engineer' },
     { name: 'Abayode Bankole', role: 'Assistant Engineer' },
-     { name: 'Yavid', role: 'Engineering Documentation' },
+     { name: 'Yavid Justiniano', role: 'Engineering Documentation' },
   ];
 
   return (
