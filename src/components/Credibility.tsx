@@ -50,7 +50,7 @@ function PieChart() {
           );
         })}
         <circle cx={cx} cy={cy} r="36" fill="white" />
-        <text x={cx} y={cy - 4} textAnchor="middle" className="text-xl font-extrabold fill-brand-navy">
+        <text x={cx} y={cy - 9} textAnchor="middle" className="text-xl font-extrabold fill-brand-navy">
           100%
         </text>
         <text x={cx} y={cy + 14} textAnchor="middle" className="text-[9px] fill-gray-400 uppercase tracking-wider">
