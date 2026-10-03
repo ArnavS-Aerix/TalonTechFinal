@@ -790,6 +790,48 @@ function AdminDashboard() {
           </div>
         )}
 
+        {/* ── Subscribers ── */}
+        {activeTab === 'subscribers' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 shadow-sm w-fit">
+              <Users size={18} className="text-brand-gold" /><span className="text-sm font-semibold text-brand-navy">{subscribers.length} subscriber{subscribers.length !== 1 ? 's' : ''}</span>
+            </div>
+            {loadingSubs ? <div className="flex justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={28} /></div> : subscribers.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center"><Users size={40} className="text-gray-300 mx-auto mb-3" /><p className="text-gray-500">No subscribers yet.</p></div>
+            ) : (
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                <div className="divide-y divide-gray-100">
+                  {subscribers.map((s) => (
+                    <div key={s.id} className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors">
+                      <div className="w-9 h-9 rounded-full bg-brand-gold/10 flex items-center justify-center shrink-0"><Mail size={14} className="text-brand-gold" /></div>
+                      <div className="min-w-0 flex-1">
+                        {editSubId === s.id ? (
+                          <div className="flex items-center gap-2">
+                            <input type="email" value={editSubEmail} onChange={(e) => setEditSubEmail(e.target.value)} className="flex-1 px-3 py-1.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none text-sm" autoFocus />
+                            <button onClick={() => handleSaveSubscriber(s.id)} className="btn-primary text-xs px-3 py-1.5"><Save size={12} /></button>
+                            <button onClick={() => { setEditSubId(null); setEditSubEmail(''); }} className="text-gray-400 hover:text-gray-600 text-xs">Cancel</button>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-sm font-medium text-brand-navy truncate">{s.email}</p>
+                            <p className="text-xs text-gray-400 flex items-center gap-1"><Clock size={10} /> {formatDateTime(s.created_at)}{s.unsubscribed_at && <span className="text-red-400 ml-1">unsubscribed</span>}</p>
+                          </>
+                        )}
+                      </div>
+                      {editSubId !== s.id && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={() => { setEditSubId(s.id); setEditSubEmail(s.email); }} className="p-1.5 text-gray-300 hover:text-brand-navy transition-colors"><Pencil size={14} /></button>
+                          <button onClick={() => handleDeleteSubscriber(s)} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── Content ── */}
         {activeTab === 'content' && (
           <div className="space-y-6">
@@ -843,6 +885,40 @@ function AdminDashboard() {
           </div>
         )}
 
+        {/* ── Photos ── */}
+        {activeTab === 'photos' && (
+          <div className="space-y-6">
+            <form onSubmit={handleAddPhoto} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 space-y-4">
+              <h2 className="text-lg font-bold text-brand-navy flex items-center gap-2"><Plus size={18} className="text-brand-gold" /> Add Photo</h2>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Caption (optional)</label>
+                <input type="text" value={photoCaption} onChange={(e) => setPhotoCaption(e.target.value)} placeholder="e.g. Building the drivetrain" className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none text-sm" />
+              </div>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-brand-gold transition-colors text-sm text-gray-600 flex-1">
+                  {uploadingPhoto ? <><Loader2 size={16} className="animate-spin" /> Uploading…</> : <><Upload size={16} /> {photoFile ? photoFile.name : 'Choose an image'}</>}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && setPhotoFile(e.target.files[0])} />
+                </label>
+                <button type="submit" disabled={savingPhoto || !photoFile} className="btn-primary text-sm disabled:opacity-60 shrink-0">{savingPhoto ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : <><Plus size={16} /> Add</>}</button>
+              </div>
+            </form>
+            {loadingPhotos ? <div className="flex justify-center py-8 text-gray-400"><Loader2 className="animate-spin" size={20} /></div> : sitePhotos.length === 0 ? <p className="text-gray-400 text-sm text-center py-6">No photos yet.</p> : (
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {sitePhotos.map((p) => (
+                  <div key={p.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden group">
+                    <div className="aspect-video bg-gray-100 overflow-hidden"><img src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/progress-photos/${p.photo_path}`} alt={p.caption ?? 'Progress photo'} className="w-full h-full object-cover" /></div>
+                    {p.caption && <p className="text-sm text-gray-600 p-3 truncate">{p.caption}</p>}
+                    <div className="px-3 pb-3 flex items-center justify-between">
+                      <span className="text-xs text-gray-400">Order: {p.sort_order}</span>
+                      <button onClick={() => handleDeletePhoto(p)} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── API Keys ── */}
         {activeTab === 'settings' && (
           <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 md:p-8 space-y-6">
@@ -870,6 +946,61 @@ function AdminDashboard() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* ── Competitions ── */}
+        {activeTab === 'competitions' && (
+          <div className="space-y-6">
+            <form onSubmit={handleAddCompetition} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 space-y-4">
+              <h2 className="text-lg font-bold text-brand-navy flex items-center gap-2"><Plus size={18} className="text-brand-gold" /> Add Competition</h2>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <input type="text" value={compForm.name} onChange={(e) => setCompForm({ ...compForm, name: e.target.value })} placeholder="Competition name *" className="px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none text-sm" />
+                <input type="date" value={compForm.date} onChange={(e) => setCompForm({ ...compForm, date: e.target.value })} className="px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none text-sm" />
+              </div>
+              <div className="grid sm:grid-cols-3 gap-4">
+                <input type="text" value={compForm.venue} onChange={(e) => setCompForm({ ...compForm, venue: e.target.value })} placeholder="Venue *" className="px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none text-sm" />
+                <input type="text" value={compForm.city} onChange={(e) => setCompForm({ ...compForm, city: e.target.value })} placeholder="City" className="px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none text-sm" />
+                <input type="text" value={compForm.state} onChange={(e) => setCompForm({ ...compForm, state: e.target.value })} placeholder="State" className="px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none text-sm" />
+              </div>
+              <textarea rows={3} value={compForm.description} onChange={(e) => setCompForm({ ...compForm, description: e.target.value })} placeholder="Description (optional)" className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none text-sm resize-y" />
+              <div className="flex items-center gap-4">
+                <select value={compForm.status} onChange={(e) => setCompForm({ ...compForm, status: e.target.value })} className="px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none text-sm">
+                  <option value="upcoming">Upcoming</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <button type="submit" disabled={savingComp} className="btn-primary text-sm disabled:opacity-60">{savingComp ? <><Loader2 size={16} className="animate-spin" /> Adding…</> : <><Plus size={16} /> Add Competition</>}</button>
+              </div>
+            </form>
+            {loadingComps ? <div className="flex justify-center py-8 text-gray-400"><Loader2 className="animate-spin" size={20} /></div> : competitions.length === 0 ? <p className="text-gray-400 text-sm text-center py-6">No competitions yet.</p> : (
+              <div className="space-y-3">
+                {competitions.map((c) => {
+                  const d = new Date(c.date + 'T00:00:00');
+                  const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                  const loc = [c.city, c.state].filter(Boolean).join(', ');
+                  return (
+                    <div key={c.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center gap-4">
+                      <div className="shrink-0 w-14 h-14 rounded-lg bg-brand-navy text-white flex flex-col items-center justify-center">
+                        <span className="text-[10px] font-semibold uppercase text-brand-gold">{d.toLocaleDateString('en-US', { month: 'short' })}</span>
+                        <span className="text-xl font-extrabold leading-none">{d.getDate()}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${c.status === 'completed' ? 'bg-green-100 text-green-700' : c.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>{c.status}</span>
+                        </div>
+                        <p className="font-semibold text-brand-navy text-sm truncate">{c.name}</p>
+                        <p className="text-xs text-gray-500 flex items-center gap-1.5 truncate"><MapPin size={10} className="text-brand-gold shrink-0" /> {c.venue}{loc ? ` · ${loc}` : ''}</p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Link to={`/competition/${c.id}`} className="p-1.5 text-gray-300 hover:text-brand-navy transition-colors" title="View details"><ExternalLink size={14} /></Link>
+                        <button onClick={() => handleDeleteCompetition(c)} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
