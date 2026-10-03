@@ -10,6 +10,7 @@ import Team from './components/Team';
 import SponsorLogos from './components/SponsorLogos';
 import PhotosCarousel from './components/PhotosCarousel';
 import Competitions from './components/Competitions';
+import Faq from './components/Faq';
 import Newsletter from './components/Newsletter';
 import SupportCall from './components/SupportCall';
 import Footer from './components/Footer';
@@ -17,6 +18,7 @@ import SponsorForm from './pages/SponsorForm';
 import DonateForm from './pages/DonateForm';
 import AdminCenter from './pages/AdminCenter';
 import CompetitionDetail from './pages/CompetitionDetail';
+import Contact from './pages/Contact';
 import Unsubscribe from './pages/Unsubscribe';
 
 function ScrollToTop() {
@@ -44,6 +46,7 @@ export default function App() {
             <Team />
             <Competitions />
             <PhotosCarousel />
+            <Faq />
             <Newsletter />
             <SupportCall />
           </>
@@ -52,6 +55,7 @@ export default function App() {
         <Route path="/donate" element={<DonateForm />} />
         <Route path="/admin" element={<AdminCenter />} />
         <Route path="/competition/:id" element={<CompetitionDetail />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="/unsubscribe" element={<Unsubscribe />} />
       </Routes>
       <Footer />

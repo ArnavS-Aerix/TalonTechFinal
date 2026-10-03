@@ -5,7 +5,7 @@ import {
   Handshake, Heart, Clock, User, Mail, Phone, Globe, ExternalLink, Save,
   Camera, ArrowLeft, Lock, KeyRound, Mail as MailIcon, Send, Sparkles,
   FileText, Calendar, ToggleLeft, ToggleRight, Eye, EyeOff, TrendingUp, Target,
-  Trophy, MapPin, Pencil, Users,
+  Trophy, MapPin, Pencil, Users, MessageSquare, HelpCircle, Inbox, Check,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -50,7 +50,10 @@ type NewsletterSchedule = {
   auto_send: boolean; day_of_week: number; send_time: string; last_sent_at: string | null;
 };
 
-type Tab = 'sponsors' | 'hero' | 'fundraising' | 'newsletter' | 'subscribers' | 'content' | 'photos' | 'competitions' | 'settings' | 'sponsorships' | 'donations';
+type Faq = { id: string; question: string; answer: string; sort_order: number };
+type ContactMessage = { id: string; name: string; email: string; subject: string; message: string; is_read: boolean; created_at: string };
+
+type Tab = 'sponsors' | 'hero' | 'fundraising' | 'newsletter' | 'subscribers' | 'content' | 'photos' | 'competitions' | 'faq' | 'messages' | 'settings' | 'sponsorships' | 'donations';
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -192,6 +195,17 @@ function AdminDashboard() {
   const [compForm, setCompForm] = useState({ name: '', date: '', venue: '', city: '', state: '', description: '', status: 'upcoming' });
   const [savingComp, setSavingComp] = useState(false);
 
+  // FAQ
+  const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [loadingFaqs, setLoadingFaqs] = useState(true);
+  const [faqForm, setFaqForm] = useState({ question: '', answer: '' });
+  const [savingFaq, setSavingFaq] = useState(false);
+
+  // Messages
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [loadingMsgs, setLoadingMsgs] = useState(true);
+  const [expandedMsg, setExpandedMsg] = useState<string | null>(null);
+
   const ADMIN_PW = 'TalonTech@2026!!';
   const fnBase = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
@@ -270,6 +284,20 @@ function AdminDashboard() {
     setLoadingComps(false);
   }, []);
 
+  const loadFaqs = useCallback(async () => {
+    setLoadingFaqs(true);
+    const { data } = await supabase.from('faqs').select('id, question, answer, sort_order').order('sort_order', { ascending: true });
+    setFaqs((data ?? []) as Faq[]);
+    setLoadingFaqs(false);
+  }, []);
+
+  const loadMessages = useCallback(async () => {
+    setLoadingMsgs(true);
+    const { data } = await supabase.from('contact_messages').select('*').order('created_at', { ascending: false });
+    setMessages((data ?? []) as ContactMessage[]);
+    setLoadingMsgs(false);
+  }, []);
+
   useEffect(() => { loadSponsors(); loadHeroSettings(); }, [loadSponsors, loadHeroSettings]);
 
   // loadHeroSettings also loads fundraising values into fundForm
@@ -283,6 +311,8 @@ function AdminDashboard() {
     { id: 'content', label: 'Content', icon: FileText },
     { id: 'photos', label: 'Photos', icon: Camera },
     { id: 'competitions', label: 'Competitions', icon: Trophy },
+    { id: 'faq', label: 'FAQ', icon: HelpCircle },
+    { id: 'messages', label: 'Messages', icon: Inbox },
     { id: 'settings', label: 'API Keys', icon: KeyRound },
     { id: 'sponsorships', label: 'Sponsor Forms', icon: Handshake },
     { id: 'donations', label: 'Donation Forms', icon: Heart },
@@ -295,6 +325,8 @@ function AdminDashboard() {
     if (tab === 'content') loadContent();
     if (tab === 'photos') loadSitePhotos();
     if (tab === 'competitions') loadCompetitions();
+    if (tab === 'faq') loadFaqs();
+    if (tab === 'messages') loadMessages();
     if (tab === 'sponsorships') loadSponsorships();
     if (tab === 'donations') loadDonations();
   };
@@ -534,6 +566,33 @@ function AdminDashboard() {
     if (!confirm(`Delete "${c.name}"?`)) return;
     await supabase.from('competitions').delete().eq('id', c.id);
     loadCompetitions();
+  };
+
+  // ── FAQ handlers ──
+  const handleAddFaq = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!faqForm.question.trim() || !faqForm.answer.trim()) return;
+    setSavingFaq(true);
+    const { error } = await supabase.from('faqs').insert({ question: faqForm.question.trim(), answer: faqForm.answer.trim(), sort_order: faqs.length });
+    setSavingFaq(false);
+    if (error) { alert('Failed: ' + error.message); return; }
+    setFaqForm({ question: '', answer: '' }); loadFaqs();
+  };
+  const handleDeleteFaq = async (f: Faq) => {
+    if (!confirm('Delete this FAQ?')) return;
+    await supabase.from('faqs').delete().eq('id', f.id); loadFaqs();
+  };
+
+  // ── Message handlers ──
+  const handleToggleRead = async (m: ContactMessage) => {
+    const newVal = !m.is_read;
+    await supabase.from('contact_messages').update({ is_read: newVal }).eq('id', m.id);
+    setMessages(messages.map((msg) => msg.id === m.id ? { ...msg, is_read: newVal } : msg));
+  };
+  const handleDeleteMessage = async (m: ContactMessage) => {
+    if (!confirm('Delete this message?')) return;
+    await supabase.from('contact_messages').delete().eq('id', m.id);
+    loadMessages();
   };
 
   const totalSponsorship = sponsorships.reduce((sum, s) => sum + Number(s.amount), 0);
@@ -1000,6 +1059,68 @@ function AdminDashboard() {
                   );
                 })}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* ── FAQ ── */}
+        {activeTab === 'faq' && (
+          <div className="space-y-6">
+            <form onSubmit={handleAddFaq} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 space-y-4">
+              <h2 className="text-lg font-bold text-brand-navy flex items-center gap-2"><Plus size={18} className="text-brand-gold" /> Add FAQ</h2>
+              <input type="text" value={faqForm.question} onChange={(e) => setFaqForm({ ...faqForm, question: e.target.value })} placeholder="Question" className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none text-sm" />
+              <textarea rows={3} value={faqForm.answer} onChange={(e) => setFaqForm({ ...faqForm, answer: e.target.value })} placeholder="Answer" className="w-full px-4 py-2.5 rounded-lg border border-gray-200 focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 outline-none text-sm resize-y" />
+              <button type="submit" disabled={savingFaq} className="btn-primary text-sm disabled:opacity-60">{savingFaq ? <><Loader2 size={16} className="animate-spin" /> Saving…</> : <><Plus size={16} /> Add</>}</button>
+            </form>
+            {loadingFaqs ? <div className="flex justify-center py-8 text-gray-400"><Loader2 className="animate-spin" size={20} /></div> : faqs.length === 0 ? <p className="text-gray-400 text-sm text-center py-6">No FAQs yet.</p> : (
+              <div className="space-y-3">{faqs.map((f) => (
+                <div key={f.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-start justify-between gap-3">
+                  <div className="min-w-0"><p className="font-semibold text-brand-navy text-sm">{f.question}</p><p className="text-sm text-gray-500 mt-1 line-clamp-2">{f.answer}</p></div>
+                  <button onClick={() => handleDeleteFaq(f)} className="p-1.5 text-gray-300 hover:text-red-500 shrink-0"><Trash2 size={14} /></button>
+                </div>
+              ))}</div>
+            )}
+          </div>
+        )}
+
+        {/* ── Messages ── */}
+        {activeTab === 'messages' && (
+          <div className="space-y-6">
+            {messages.filter((m) => !m.is_read).length > 0 && (
+              <div className="flex items-center gap-2 bg-brand-gold/10 border border-brand-gold/20 rounded-xl px-4 py-2.5 w-fit">
+                <Inbox size={18} className="text-brand-gold" /><span className="text-sm font-semibold text-brand-navy">{messages.filter((m) => !m.is_read).length} unread</span>
+              </div>
+            )}
+            {loadingMsgs ? <div className="flex justify-center py-16 text-gray-400"><Loader2 className="animate-spin" size={28} /></div> : messages.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-12 text-center"><Inbox size={40} className="text-gray-300 mx-auto mb-3" /><p className="text-gray-500">No messages yet.</p></div>
+            ) : (
+              <div className="space-y-3">{messages.map((m) => {
+                const isOpen = expandedMsg === m.id;
+                return (
+                  <div key={m.id} className={`bg-white rounded-xl shadow-sm border overflow-hidden ${m.is_read ? 'border-gray-100' : 'border-brand-gold/40'}`}>
+                    <div className="flex items-center gap-3 p-4">
+                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${m.is_read ? 'bg-gray-300' : 'bg-brand-gold'}`} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <span className="text-xs font-semibold text-brand-gold uppercase">{m.subject}</span>
+                          {!m.is_read && <span className="text-[10px] font-bold text-brand-gold bg-brand-gold/10 px-1.5 py-0.5 rounded">NEW</span>}
+                          <span className="text-xs text-gray-400 flex items-center gap-1"><Clock size={10} /> {formatDateTime(m.created_at)}</span>
+                        </div>
+                        <p className="font-semibold text-brand-navy text-sm">{m.name}</p>
+                        <p className="text-xs text-gray-400">{m.email}</p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => setExpandedMsg(isOpen ? null : m.id)} className="text-xs text-brand-gold hover:underline px-2">{isOpen ? 'Hide' : 'Read'}</button>
+                        <button onClick={() => handleToggleRead(m)} className="p-1.5 text-gray-300 hover:text-green-500 transition-colors" title={m.is_read ? 'Mark unread' : 'Mark read'}><Check size={14} /></button>
+                        <button onClick={() => handleDeleteMessage(m)} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                      </div>
+                    </div>
+                    {isOpen && (
+                      <div className="px-4 pb-4 border-t border-gray-50 pt-3"><p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{m.message}</p></div>
+                    )}
+                  </div>
+                );
+              })}</div>
             )}
           </div>
         )}

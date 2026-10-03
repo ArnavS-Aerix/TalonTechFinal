@@ -28,6 +28,7 @@ export default function Footer() {
               <li><a href="#team" className="text-white/60 hover:text-brand-gold text-sm transition-colors">Meet the Team</a></li>
               <li><Link to="/donate" className="text-white/60 hover:text-brand-gold text-sm transition-colors">Donate</Link></li>
               <li><Link to="/sponsor" className="text-white/60 hover:text-brand-gold text-sm transition-colors">Sponsor</Link></li>
+              <li><Link to="/contact" className="text-white/60 hover:text-brand-gold text-sm transition-colors">Contact Us</Link></li>
             </ul>
           </div>
 

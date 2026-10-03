@@ -19,6 +19,7 @@ export default function Navbar() {
     { to: '/', label: 'Home' },
     { to: '/sponsor', label: 'Sponsor' },
     { to: '/donate', label: 'Donate' },
+    { to: '/contact', label: 'Contact' },
   ];
 
   return (
