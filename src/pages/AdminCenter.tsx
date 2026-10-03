@@ -5,6 +5,7 @@ import {
   Handshake, Heart, Clock, User, Mail, Phone, Globe, ExternalLink, Save,
   Camera, ArrowLeft, Lock, KeyRound, Mail as MailIcon, Send, Sparkles,
   FileText, Calendar, ToggleLeft, ToggleRight, Eye, EyeOff, TrendingUp, Target,
+  Trophy, MapPin, Pencil, Users,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -34,11 +35,22 @@ type ProgressEntry = {
 type NotebookEntry = {
   id: string; title: string; body: string; entry_date: string; reported: boolean; created_at: string;
 };
+type Subscriber = {
+  id: string; email: string; created_at: string; unsubscribed_at: string | null;
+};
+type SitePhoto = {
+  id: string; photo_path: string; caption: string | null; sort_order: number;
+};
+type Competition = {
+  id: string; name: string; date: string; venue: string; city: string | null; state: string | null;
+  status: string; created_at: string;
+};
+
 type NewsletterSchedule = {
   auto_send: boolean; day_of_week: number; send_time: string; last_sent_at: string | null;
 };
 
-type Tab = 'sponsors' | 'hero' | 'fundraising' | 'newsletter' | 'content' | 'settings' | 'sponsorships' | 'donations';
+type Tab = 'sponsors' | 'hero' | 'fundraising' | 'newsletter' | 'subscribers' | 'content' | 'photos' | 'competitions' | 'settings' | 'sponsorships' | 'donations';
 
 function formatDateTime(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -160,6 +172,26 @@ function AdminDashboard() {
   const [donations, setDonations] = useState<Donation[]>([]);
   const [loadingDonations, setLoadingDonations] = useState(true);
 
+  // Subscribers
+  const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [loadingSubs, setLoadingSubs] = useState(true);
+  const [editSubId, setEditSubId] = useState<string | null>(null);
+  const [editSubEmail, setEditSubEmail] = useState('');
+
+  // Photos
+  const [sitePhotos, setSitePhotos] = useState<SitePhoto[]>([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(true);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoCaption, setPhotoCaption] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [savingPhoto, setSavingPhoto] = useState(false);
+
+  // Competitions
+  const [competitions, setCompetitions] = useState<Competition[]>([]);
+  const [loadingComps, setLoadingComps] = useState(true);
+  const [compForm, setCompForm] = useState({ name: '', date: '', venue: '', city: '', state: '', description: '', status: 'upcoming' });
+  const [savingComp, setSavingComp] = useState(false);
+
   const ADMIN_PW = 'TalonTech@2026!!';
   const fnBase = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
@@ -217,6 +249,27 @@ function AdminDashboard() {
     setLoadingDonations(false);
   }, []);
 
+  const loadSubscribers = useCallback(async () => {
+    setLoadingSubs(true);
+    const { data } = await supabase.from('newsletter_subscribers').select('id, email, created_at, unsubscribed_at').order('created_at', { ascending: false });
+    setSubscribers((data ?? []) as Subscriber[]);
+    setLoadingSubs(false);
+  }, []);
+
+  const loadSitePhotos = useCallback(async () => {
+    setLoadingPhotos(true);
+    const { data } = await supabase.from('site_photos').select('id, photo_path, caption, sort_order').order('sort_order', { ascending: true });
+    setSitePhotos((data ?? []) as SitePhoto[]);
+    setLoadingPhotos(false);
+  }, []);
+
+  const loadCompetitions = useCallback(async () => {
+    setLoadingComps(true);
+    const { data } = await supabase.from('competitions').select('id, name, date, venue, city, state, status, created_at').order('date', { ascending: true });
+    setCompetitions((data ?? []) as Competition[]);
+    setLoadingComps(false);
+  }, []);
+
   useEffect(() => { loadSponsors(); loadHeroSettings(); }, [loadSponsors, loadHeroSettings]);
 
   // loadHeroSettings also loads fundraising values into fundForm
@@ -226,7 +279,10 @@ function AdminDashboard() {
     { id: 'hero', label: 'Hero Background', icon: Palette },
     { id: 'fundraising', label: 'Fundraising', icon: TrendingUp },
     { id: 'newsletter', label: 'Newsletter', icon: MailIcon },
+    { id: 'subscribers', label: 'Subscribers', icon: Users },
     { id: 'content', label: 'Content', icon: FileText },
+    { id: 'photos', label: 'Photos', icon: Camera },
+    { id: 'competitions', label: 'Competitions', icon: Trophy },
     { id: 'settings', label: 'API Keys', icon: KeyRound },
     { id: 'sponsorships', label: 'Sponsor Forms', icon: Handshake },
     { id: 'donations', label: 'Donation Forms', icon: Heart },
@@ -235,7 +291,10 @@ function AdminDashboard() {
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
     if (tab === 'newsletter') { loadIssues(); loadSchedule(); }
+    if (tab === 'subscribers') loadSubscribers();
     if (tab === 'content') loadContent();
+    if (tab === 'photos') loadSitePhotos();
+    if (tab === 'competitions') loadCompetitions();
     if (tab === 'sponsorships') loadSponsorships();
     if (tab === 'donations') loadDonations();
   };
@@ -418,6 +477,63 @@ function AdminDashboard() {
     if (!confirm(`Delete donation from ${d.is_anonymous ? 'Anonymous' : d.name}?`)) return;
     await supabase.from('donations').delete().eq('id', d.id);
     loadDonations();
+  };
+
+  // ── Subscriber handlers ──
+  const handleSaveSubscriber = async (id: string) => {
+    if (!editSubEmail.trim()) return;
+    const { error } = await supabase.from('newsletter_subscribers').update({ email: editSubEmail.trim().toLowerCase() }).eq('id', id);
+    if (error) { alert('Failed: ' + error.message); return; }
+    setEditSubId(null); setEditSubEmail(''); loadSubscribers();
+  };
+  const handleDeleteSubscriber = async (s: Subscriber) => {
+    if (!confirm(`Delete subscriber ${s.email}?`)) return;
+    await supabase.from('newsletter_subscribers').delete().eq('id', s.id);
+    loadSubscribers();
+  };
+
+  // ── Photo handlers ──
+  const handleAddPhoto = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!photoFile) return;
+    setSavingPhoto(true);
+    setUploadingPhoto(true);
+    const ext = photoFile.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: upErr } = await supabase.storage.from('progress-photos').upload(fileName, photoFile);
+    setUploadingPhoto(false);
+    if (upErr) { setSavingPhoto(false); alert('Upload failed: ' + upErr.message); return; }
+    const { error } = await supabase.from('site_photos').insert({ photo_path: fileName, caption: photoCaption.trim() || null, sort_order: sitePhotos.length });
+    setSavingPhoto(false);
+    if (error) { alert('Failed: ' + error.message); return; }
+    setPhotoFile(null); setPhotoCaption(''); loadSitePhotos();
+  };
+  const handleDeletePhoto = async (p: SitePhoto) => {
+    if (!confirm('Delete this photo?')) return;
+    await supabase.storage.from('progress-photos').remove([p.photo_path]);
+    await supabase.from('site_photos').delete().eq('id', p.id);
+    loadSitePhotos();
+  };
+
+  // ── Competition handlers ──
+  const handleAddCompetition = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!compForm.name.trim() || !compForm.date || !compForm.venue.trim()) return;
+    setSavingComp(true);
+    const { error } = await supabase.from('competitions').insert({
+      name: compForm.name.trim(), date: compForm.date, venue: compForm.venue.trim(),
+      city: compForm.city.trim() || null, state: compForm.state.trim() || null,
+      description: compForm.description.trim() || null, status: compForm.status,
+    });
+    setSavingComp(false);
+    if (error) { alert('Failed: ' + error.message); return; }
+    setCompForm({ name: '', date: '', venue: '', city: '', state: '', description: '', status: 'upcoming' });
+    loadCompetitions();
+  };
+  const handleDeleteCompetition = async (c: Competition) => {
+    if (!confirm(`Delete "${c.name}"?`)) return;
+    await supabase.from('competitions').delete().eq('id', c.id);
+    loadCompetitions();
   };
 
   const totalSponsorship = sponsorships.reduce((sum, s) => sum + Number(s.amount), 0);
