@@ -97,34 +97,30 @@ function buildPrompt(
 
 async function callLLM(apiKey: string, prompt: string): Promise<{ ok: boolean; html?: string; error?: string }> {
   try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: "You are a skilled newsletter writer for a high-school robotics team. You write warm, concise, professional HTML email content." }],
-          },
-          contents: [
-            { role: "user", parts: [{ text: prompt }] },
-          ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1200,
-          },
-        }),
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
       },
-    );
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: "You are a skilled newsletter writer for a high-school robotics team. You write warm, concise, professional HTML email content." },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.7,
+        max_tokens: 1200,
+      }),
+    });
     if (!res.ok) {
       const text = await res.text();
-      return { ok: false, error: `Gemini ${res.status}: ${text}` };
+      return { ok: false, error: `OpenAI ${res.status}: ${text}` };
     }
     const json = await res.json();
-    const html = json?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text).filter(Boolean).join("\n");
+    const html = json?.choices?.[0]?.message?.content;
     if (!html) {
-      const blockReason = json?.promptFeedback?.blockReason;
-      return { ok: false, error: blockReason ? `Empty Gemini response (blocked: ${blockReason}).` : "Empty Gemini response." };
+      return { ok: false, error: "Empty OpenAI response." };
     }
     return { ok: true, html };
   } catch (err) {
@@ -148,9 +144,9 @@ Deno.serve(async (req: Request) => {
       { auth: { persistSession: false } },
     );
 
-    const secrets = await loadSecrets(supabase, ["admin_password", "gemini_api_key", "postmark_server_token", "site_url"]);
+    const secrets = await loadSecrets(supabase, ["admin_password", "openai_api_key", "gemini_api_key", "postmark_server_token", "site_url"]);
     const adminPassword = secrets["admin_password"] ?? null;
-    const geminiKey = secrets["gemini_api_key"] ?? null;
+    const openaiKey = secrets["openai_api_key"] ?? null;
     const postmarkKey = secrets["postmark_server_token"] ?? null;
 
     const body = await req.json().catch(() => ({}));
@@ -176,9 +172,9 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    if (!geminiKey) {
+    if (!openaiKey) {
       return new Response(
-        JSON.stringify({ error: "Gemini API key is not configured. Add it in the admin settings." }),
+        JSON.stringify({ error: "OpenAI API key is not configured. Add it in the admin settings." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -230,7 +226,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const prompt = buildPrompt(progressList, notebookList, photos, weekLabel(new Date()));
-    const llmResult = await callLLM(geminiKey, prompt);
+    const llmResult = await callLLM(openaiKey, prompt);
     if (!llmResult.ok || !llmResult.html) {
       return new Response(
         JSON.stringify({ error: `AI generation failed: ${llmResult.error}` }),

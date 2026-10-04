@@ -68,33 +68,36 @@ async function loadContext(supabase: ReturnType<typeof createClient>): Promise<s
 
 type ChatMessage = { role: string; content: string };
 
-async function callGemini(apiKey: string, systemPrompt: string, messages: ChatMessage[]): Promise<{ ok: boolean; text?: string; error?: string }> {
+async function callOpenAI(apiKey: string, systemPrompt: string, messages: ChatMessage[]): Promise<{ ok: boolean; text?: string; error?: string }> {
   try {
-    const contents = messages
-      .filter((m) => m.role === "user" || m.role === "model")
-      .map((m) => ({ role: m.role === "assistant" ? "model" : m.role, parts: [{ text: m.content }] }));
+    const apiMessages = [
+      { role: "system", content: systemPrompt },
+      ...messages
+        .filter((m) => m.role === "user" || m.role === "assistant")
+        .map((m) => ({ role: m.role, content: m.content })),
+    ];
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt }] },
-          contents,
-          generationConfig: { temperature: 0.7, maxOutputTokens: 500 },
-        }),
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
       },
-    );
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: apiMessages,
+        temperature: 0.7,
+        max_tokens: 500,
+      }),
+    });
     if (!res.ok) {
       const text = await res.text();
-      return { ok: false, error: `Gemini ${res.status}: ${text}` };
+      return { ok: false, error: `OpenAI ${res.status}: ${text}` };
     }
     const json = await res.json();
-    const text = json?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text).filter(Boolean).join("\n");
+    const text = json?.choices?.[0]?.message?.content;
     if (!text) {
-      const blockReason = json?.promptFeedback?.blockReason;
-      return { ok: false, error: blockReason ? `Response blocked: ${blockReason}` : "Empty response." };
+      return { ok: false, error: "Empty response from OpenAI." };
     }
     return { ok: true, text };
   } catch (err) {
@@ -114,12 +117,12 @@ Deno.serve(async (req: Request) => {
       { auth: { persistSession: false } },
     );
 
-    const secrets = await loadSecrets(supabase, ["gemini_api_key"]);
-    const geminiKey = secrets["gemini_api_key"] ?? null;
+    const secrets = await loadSecrets(supabase, ["openai_api_key", "gemini_api_key"]);
+    const openaiKey = secrets["openai_api_key"] ?? null;
 
-    if (!geminiKey) {
+    if (!openaiKey) {
       return new Response(
-        JSON.stringify({ error: "AI is not configured yet. Please check back later!" }),
+        JSON.stringify({ error: "AI is not configured yet. An admin needs to add an OpenAI API key in the admin settings." }),
         { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -142,7 +145,7 @@ Deno.serve(async (req: Request) => {
       { role: "user", content: userMessage },
     ];
 
-    const result = await callGemini(geminiKey, context, chatHistory);
+    const result = await callOpenAI(openaiKey, context, chatHistory);
     if (!result.ok || !result.text) {
       return new Response(
         JSON.stringify({ error: "I couldn't generate a response right now. Please try again!" }),

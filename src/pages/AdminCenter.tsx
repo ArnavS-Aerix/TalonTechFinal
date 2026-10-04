@@ -165,7 +165,7 @@ function AdminDashboard() {
   const [savingNotebook, setSavingNotebook] = useState(false);
 
   // Settings (API keys)
-  const [secretForm, setSecretForm] = useState({ gemini_api_key: '', postmark_server_token: '', from_email: '', site_url: '' });
+  const [secretForm, setSecretForm] = useState({ openai_api_key: '', postmark_server_token: '', from_email: '', site_url: '' });
   const [savingSecret, setSavingSecret] = useState<string | null>(null);
   const [secretStatus, setSecretStatus] = useState<{ name: string; ok: boolean; message: string } | null>(null);
 
@@ -984,7 +984,7 @@ function AdminDashboard() {
             <h2 className="text-xl font-bold text-brand-navy flex items-center gap-2"><KeyRound size={18} className="text-brand-gold" /> API Keys & Settings</h2>
             <p className="text-gray-500 text-sm">These secrets are stored securely in the database and used by the edge functions for newsletter generation and email sending.</p>
             {[
-              { name: 'gemini_api_key', label: 'Gemini API Key', placeholder: 'AIza...', type: 'password', icon: Sparkles, hint: 'Used by the AI to generate newsletter content.' },
+              { name: 'openai_api_key', label: 'OpenAI API Key', placeholder: 'sk-...', type: 'password', icon: Sparkles, hint: 'Used by the AI chatbot and newsletter generation. Get one at platform.openai.com.' },
               { name: 'postmark_server_token', label: 'Postmark Server Token', placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', type: 'password', icon: Send, hint: 'Used to send emails via Postmark.' },
               { name: 'from_email', label: 'From Email Address', placeholder: 'newsletter@talontech.team', type: 'text', icon: Mail, hint: 'The sender address for newsletter emails.' },
               { name: 'site_url', label: 'Site URL', placeholder: 'https://talontech.bolt.host', type: 'text', icon: Globe, hint: 'Used for unsubscribe links in emails.' },
