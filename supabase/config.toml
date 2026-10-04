@@ -1,0 +1,23 @@
+[functions.generate-newsletter]
+verify_jwt = true
+entrypoint = "./functions/generate-newsletter/index.ts"
+
+[functions.save-secret]
+verify_jwt = true
+entrypoint = "./functions/save-secret/index.ts"
+
+[functions.send-newsletter]
+verify_jwt = true
+entrypoint = "./functions/send-newsletter/index.ts"
+
+[functions.subscribe]
+verify_jwt = false
+entrypoint = "./functions/subscribe/index.ts"
+
+[functions.unsubscribe]
+verify_jwt = false
+entrypoint = "./functions/unsubscribe/index.ts"
+
+[functions.chatbot]
+verify_jwt = false
+entrypoint = "./functions/chatbot/index.ts"

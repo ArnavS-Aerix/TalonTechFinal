@@ -14,6 +14,7 @@ import Faq from './components/Faq';
 import Newsletter from './components/Newsletter';
 import SupportCall from './components/SupportCall';
 import Footer from './components/Footer';
+import ChatBot from './components/ChatBot';
 import SponsorForm from './pages/SponsorForm';
 import DonateForm from './pages/DonateForm';
 import AdminCenter from './pages/AdminCenter';
@@ -59,6 +60,7 @@ export default function App() {
         <Route path="/unsubscribe" element={<Unsubscribe />} />
       </Routes>
       <Footer />
+      <ChatBot />
     </BrowserRouter>
   );
 }
