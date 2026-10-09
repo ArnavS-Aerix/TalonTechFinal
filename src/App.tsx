@@ -44,9 +44,9 @@ export default function App() {
             <SponsorshipTiers />
             <SponsorsCarousel />
             <Credibility />
-            <Team />
             <Competitions />
             <PhotosCarousel />
+            <Team />
             <Faq />
             <Newsletter />
             <SupportCall />

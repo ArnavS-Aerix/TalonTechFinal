@@ -1,4 +1,4 @@
-import { School, Hash, CalendarDays, Mail, Wallet, MapPin } from 'lucide-react';
+import { School, Hash, Mail, Wallet } from 'lucide-react';
 
 const mentors = [
   { name: 'Jessica Adams', email: 'jadams@lakewoodranchprep.org' },
@@ -137,23 +137,6 @@ export default function Credibility() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-
-        {/* Competition schedule */}
-        <div className="bg-gray-50 rounded-2xl border border-gray-100 p-8 md:p-10 mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-brand-gold/20 rounded-xl flex items-center justify-center">
-              <CalendarDays className="text-brand-gold" size={20} />
-            </div>
-            <h3 className="text-xl font-bold text-brand-navy">Competition Schedule</h3>
-          </div>
-          <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 p-5">
-            <MapPin className="text-gray-400 shrink-0" size={18} />
-            <p className="text-gray-500 text-sm">
-              Competition dates and locations will be released soon. Check back for updates as the
-              season approaches.
-            </p>
           </div>
         </div>
 
