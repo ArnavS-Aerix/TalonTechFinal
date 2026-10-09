@@ -24,6 +24,14 @@ export default function PhotosCarousel() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (photos.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrent((c) => (c + 1) % photos.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [photos.length]);
+
   if (loading) {
     return (
       <section className="py-20 md:py-24 bg-gray-50">
